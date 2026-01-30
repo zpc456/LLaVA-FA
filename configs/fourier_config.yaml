@@ -1,0 +1,201 @@
+# LLaVA-FA Configuration File
+# Example configuration for Fourier approximation training
+
+# Model Configuration
+model:
+  name_or_path: "liuhaotian/llava-v1.5-7b"
+  model_base: null
+  version: "v1"
+  vision_tower: "openai/clip-vit-large-patch14"
+  mm_projector_type: "linear"
+  pretrain_mm_mlp_adapter: null
+
+# Data Configuration  
+data:
+  data_path: "path/to/training/data.json"
+  eval_data_path: null
+  image_folder: "path/to/images"
+  image_aspect_ratio: "square"
+  lazy_preprocess: true
+  image_grid_pinpoints: null
+
+# Fourier Approximation Configuration
+fourier:
+  enable: true
+  basis_type: "dct"  # Options: dct, dst, fourier, mixed
+  compression_ratio: 0.05  # Overall compression ratio
+  
+  # Target modules for Fourier injection
+  target_modules:
+    - "q_proj"
+    - "k_proj" 
+    - "v_proj"
+    - "o_proj"
+    - "up_proj"
+    - "down_proj"
+    - "gate_proj"
+  
+  # Per-module compression ratios (optional, overrides global compression_ratio)
+  compression_ratios:
+    q_proj: 0.04
+    k_proj: 0.04
+    v_proj: 0.04
+    o_proj: 0.05
+    up_proj: 0.03
+    down_proj: 0.03
+    gate_proj: 0.03
+    mm_projector: 0.06
+  
+  # Fourier-specific parameters
+  scaling: 1.0
+  dropout: 0.1
+  enable_per_layer_scaling: false
+
+# Frequency Scheduling Configuration
+frequency_scheduling:
+  enable: true
+  type: "linear"  # Options: linear, exponential, cosine, step, adaptive
+  warmup_steps: null  # Auto-computed as 10% of total steps if null
+  min_components: 0.1
+  max_components: 0.8
+  temperature: 1.0
+  adaptive_threshold: 0.1
+
+# Knowledge Distillation Configuration
+distillation:
+  teacher_model_path: "path/to/teacher/model"  # Set to null to disable distillation
+  alpha: 0.5                    # Balance between KL and task loss
+  temperature: 4.0              # Distillation temperature
+  hidden_distillation_weight: 0.5   # Hidden state alignment weight
+  attention_distillation_weight: 0.0  # Attention transfer weight
+
+# Training Configuration
+training:
+  output_dir: "./output/llava-fa-experiment"
+  num_train_epochs: 3
+  max_steps: -1
+  
+  # Batch sizes and accumulation
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 1
+  
+  # Learning rate and optimization
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 500
+  lr_scheduler_type: "cosine"
+  
+  # Evaluation and saving
+  evaluation_strategy: "steps"
+  eval_steps: 500
+  save_strategy: "steps"
+  save_steps: 500
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  
+  # Logging
+  logging_steps: 50
+  report_to: "wandb"
+  run_name: null  # Auto-generated if null
+  
+  # Mixed precision and performance
+  fp16: true
+  bf16: false
+  gradient_checkpointing: true
+  dataloader_num_workers: 4
+  remove_unused_columns: false
+  
+  # Regularization
+  frequency_regularization: 1e-4
+  low_freq_weight: 1.0
+  high_freq_weight: 2.0
+  frequency_dropout_rate: 0.1
+
+# Model-specific Configuration
+model_config:
+  use_mm_proj: true
+  mm_use_im_start_end: false
+  mm_use_im_patch_token: false
+  freeze_mm_mlp_adapter: false
+  group_by_modality_length: true
+
+# Compression and Optimization (Post-training)
+compression:
+  enable_sparsification: false
+  target_sparsity: 0.5
+  sparsification_schedule: "linear"
+  quantization_bits: 8
+  enable_quantization: false
+
+# Logging and Analysis
+logging:
+  log_frequency_stats: true
+  frequency_stats_steps: 100
+  log_compression_metrics: true
+  
+# Hardware and Performance
+hardware:
+  mixed_precision: true
+  gradient_checkpointing: true
+  ddp_find_unused_parameters: false
+
+# Presets for common configurations
+presets:
+  conservative:
+    fourier:
+      compression_ratio: 0.08
+      compression_ratios:
+        q_proj: 0.08
+        k_proj: 0.08
+        v_proj: 0.08
+        o_proj: 0.10
+    frequency_scheduling:
+      type: "linear"
+      min_components: 0.15
+      max_components: 0.7
+      warmup_steps: 1000
+    training:
+      learning_rate: 1e-5
+      frequency_regularization: 1e-3
+  
+  aggressive:
+    fourier:
+      compression_ratio: 0.02
+      compression_ratios:
+        q_proj: 0.02
+        k_proj: 0.02
+        v_proj: 0.02
+        o_proj: 0.03
+        up_proj: 0.015
+        down_proj: 0.015
+        gate_proj: 0.015
+    frequency_scheduling:
+      type: "exponential"
+      min_components: 0.05
+      max_components: 0.95
+      warmup_steps: 200
+    training:
+      learning_rate: 3e-5
+      frequency_regularization: 5e-4
+      
+  balanced:
+    fourier:
+      compression_ratio: 0.05
+      compression_ratios:
+        q_proj: 0.04
+        k_proj: 0.04
+        v_proj: 0.04
+        o_proj: 0.06
+        up_proj: 0.03
+        down_proj: 0.03
+        gate_proj: 0.03
+    frequency_scheduling:
+      type: "cosine"
+      min_components: 0.1
+      max_components: 0.8
+      warmup_steps: 500
+    training:
+      learning_rate: 2e-5
+      frequency_regularization: 1e-4
