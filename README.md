@@ -50,8 +50,8 @@ If you use LLaVA-FA in your research, please cite:
 ```bibtex
 @article{llava_fa_2026,
   title={LLaVA-FA: Learning Fourier Approximation for Compressing Large Multimodal Models},
-  author={Your Name},
-  journal={ICLR},
+  author={Pengcheng Zheng, Chaoning Zhang, Jiarong Mo, GuoHui Li, Jiaquan Zhang, Jiahao Zhang, Sihan Cao, Sheng Zheng, Caiyan Qin, Guoqing Wang, Yang Yang},
+  conference={ICLR},
   year={2026}
 }
 ```
